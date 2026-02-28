@@ -46,7 +46,16 @@
 This project uses the `@softeria/ms-365-mcp-server` MCP server for:
 - **Email:** Read incoming RFQs, sub-trade quotes; draft and send bid submissions
 - **Excel/OneDrive:** Read/write estimating spreadsheets, pricing databases
+- **SharePoint:** Access estimating templates and project files from the company SharePoint site
 - **Calendar:** Track bid deadlines, site visit dates
+
+### SharePoint Estimating Templates
+Estimating templates are stored on the company SharePoint site (not locally).
+When creating a new estimate, pull the appropriate template from SharePoint rather
+than building from scratch. Use MS 365 tools to:
+- List available templates from the SharePoint projects library
+- Copy a template to start a new estimate
+- Save completed estimates back to the appropriate SharePoint project folder
 
 ### Setup Required
 Before using MS 365 tools, you must:
@@ -55,8 +64,7 @@ Before using MS 365 tools, you must:
 3. Run `npx -y @softeria/ms-365-mcp-server --login` to authenticate via browser
 
 ## File Structure
-- `estimating/templates/` — Estimate spreadsheet templates
-- `estimating/` — Active project estimates
+- `estimating/` — Local working copies of active estimates (originals on SharePoint)
 - `.agents/skills/` — Marketing and other AI skills
 - `.claude/` — Claude Code configuration and custom commands
 

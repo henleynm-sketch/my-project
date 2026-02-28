@@ -30,6 +30,7 @@ Add these permissions:
 | `Calendars.ReadWrite` | Read and manage your calendar |
 | `Files.ReadWrite` | Read and manage your OneDrive files |
 | `Contacts.Read` | Read your contacts |
+| `Sites.ReadWrite.All` | Read and manage SharePoint sites (for estimating templates) |
 
 Click **Grant admin consent** if you're the admin of your M365 tenant.
 
