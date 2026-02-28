@@ -62,7 +62,16 @@ Other AI tools are producing marketing content saved to Google Drive. Reference 
 | Social Media Content Calendar | https://drive.google.com/open?id=1cHd94LBnRSst9SQt3o9uxqHsB3r_Zcad |
 | On-Site Video Production Schedule | https://drive.google.com/open?id=1XyshM4FFW0GtgBWzRQ43OQDQS8bOp91o |
 
-**Note:** These are `.md` files on Google Drive. Content can't be fetched directly — if Nick wants Claude to reference or align with these docs, he should paste the content into the chat or copy them into the repo.
+**Access:** Use the `@piotr-agier/google-drive-mcp` MCP server to read/write these files directly (if connected). Otherwise, Nick can paste content into chat or copy files into the repo.
+
+### Book: "From Dream to Doorstep"
+- **Full title:** "From Dream to Doorstep: A Guide to Building and Renovating Custom Homes with Confidence"
+- **Author:** Nick Henley
+- **Format:** Q&A style, professional/practical tone
+- **Status:** In progress (co-written with ChatGPT)
+- **Outline saved:** `marketing/book/from-dream-to-doorstep-outline.md`
+- **Covers:** Part 1 (Planning & Vision, 6 chapters) + Part 2 (Design & Pre-Construction, 2 chapters so far)
+- **Use for content:** Each chapter = multiple LinkedIn posts, Instagram carousels, TikTok videos, blog posts, and lead magnets
 
 ### Social Media Platforms
 - **Nick personally:** LinkedIn
