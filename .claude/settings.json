@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ms365": {
+      "command": "npx",
+      "args": ["-y", "@softeria/ms-365-mcp-server", "--org-mode"],
+      "env": {
+        "MS365_MCP_CLIENT_ID": "YOUR_AZURE_CLIENT_ID_HERE",
+        "MS365_MCP_TENANT_ID": "YOUR_AZURE_TENANT_ID_HERE"
+      }
+    }
+  }
+}
