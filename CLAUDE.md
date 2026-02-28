@@ -59,9 +59,8 @@ than building from scratch. Use MS 365 tools to:
 
 ### Setup Required
 Before using MS 365 tools, you must:
-1. Register an Azure AD app (see setup-guide.md)
-2. Replace placeholder values in `.claude/settings.json` with your Azure Client ID and Tenant ID
-3. Run `npx -y @softeria/ms-365-mcp-server --login` to authenticate via browser
+1. Run `npx -y @softeria/ms-365-mcp-server --login` to authenticate via browser
+2. (Optional) Register your own Azure AD app for production use — see setup-guide.md
 
 ## File Structure
 - `estimating/` — Local working copies of active estimates (originals on SharePoint)
