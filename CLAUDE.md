@@ -51,6 +51,19 @@ Use it to:
 - Core message: "We build the spaces where families grow together"
 - Tagline: "Build. Grow. Together."
 
+### Google Drive — AI-Generated Marketing Docs
+Other AI tools are producing marketing content saved to Google Drive. Reference and align with these when creating new content:
+
+| Document | Google Drive Link |
+|---|---|
+| Marketing Plan | https://drive.google.com/open?id=1XFVp3EJXoVW5FZ2pRMeJCuFoxsk-CoL2 |
+| Marketing Plan Research | https://drive.google.com/open?id=1xVBuIb-Q8Ob7LHLZt4ZRKo3dBSUA4str |
+| Social Media Tools Research | https://drive.google.com/open?id=1Rk_VGBjq0RJC7UtDRtKy4KhNeUvQpA5r |
+| Social Media Content Calendar | https://drive.google.com/open?id=1cHd94LBnRSst9SQt3o9uxqHsB3r_Zcad |
+| On-Site Video Production Schedule | https://drive.google.com/open?id=1XyshM4FFW0GtgBWzRQ43OQDQS8bOp91o |
+
+**Note:** These are `.md` files on Google Drive. Content can't be fetched directly — if Nick wants Claude to reference or align with these docs, he should paste the content into the chat or copy them into the repo.
+
 ### Social Media Platforms
 - **Nick personally:** LinkedIn
 - **Henley Contracting:** Instagram, Facebook, TikTok
