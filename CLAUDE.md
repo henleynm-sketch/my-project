@@ -36,3 +36,23 @@ Use it to:
 
 ## Remembered Context
 <!-- Add session-specific learnings below this line -->
+
+### File Delivery
+- All deliverables (spreadsheets, documents, reports) go to **OneDrive > Claude Outputs**
+- Use subfolders: `Claude Outputs/Marketing`, `Claude Outputs/Estimates`, etc.
+- Upload via MS 365 MCP server after generating files
+
+### Marketing Content System
+- Brand messaging, content strategies, and ready-to-post content created (Feb 2026)
+- Files in repo: `marketing/` directory
+- Content calendar Excel: `marketing/henley-content-calendar.xlsx`
+- Generator script: `marketing/generate_calendar.py` (can regenerate/update the calendar)
+- Two brands: **Nick on LinkedIn** (personal brand) + **Henley Contracting on IG/FB/TikTok** (company brand)
+- Core message: "We build the spaces where families grow together"
+- Tagline: "Build. Grow. Together."
+
+### Social Media Platforms
+- **Nick personally:** LinkedIn
+- **Henley Contracting:** Instagram, Facebook, TikTok
+- **Scheduling tools:** Repurpose.io (video cross-posting), Meta Business Suite or similar for scheduling
+- **Project content source:** BuilderTrend (has all project info, photos, timelines)
