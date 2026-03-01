@@ -1,0 +1,13 @@
+# Token cache (contains auth tokens — never commit)
+.token_cache.json
+
+# Output files (generated summaries)
+output/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env

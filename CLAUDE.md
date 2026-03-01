@@ -78,3 +78,11 @@ Other AI tools are producing marketing content saved to Google Drive. Reference 
 - **Henley Contracting:** Instagram, Facebook, TikTok
 - **Scheduling tools:** Repurpose.io (video cross-posting), Meta Business Suite or similar for scheduling
 - **Project content source:** BuilderTrend (has all project info, photos, timelines)
+
+### Email Summarizer Tool
+- **Location:** `email-summarizer/` directory
+- **Purpose:** Fetch recent Outlook emails via Microsoft Graph API, categorize by business context, surface action items
+- **Setup:** Requires Azure AD app registration (see `email-summarizer/README.md`)
+- **Categories:** Quotes & Bids, Projects & Site, Client Communication, Marketing & Leads, Finance, Newsletters & Automated
+- **Auth:** Device code flow (works from CLI or mobile), tokens cached locally
+- **Output:** Text or Markdown, can save to `email-summarizer/output/`
