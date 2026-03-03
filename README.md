@@ -13,93 +13,85 @@ Each photo is renamed to a consistent format:
 ProjectName_YYYYMMDD_LogPhoto_01.jpg
 ```
 
+## How It Works
+
+This script uses **browser automation** (Playwright) to log into Buildertrend
+with your normal username and password — no API credentials needed. It:
+
+1. Opens a headless Chrome browser and logs into `buildertrend.net`.
+2. Navigates to the Daily Logs page for the target date.
+3. Captures all photo URLs (via network interception + page scraping).
+4. Downloads each photo using the authenticated browser session.
+5. Uploads photos to Google Drive in the organized folder structure.
+6. Skips duplicates — safe to run multiple times.
+
 ---
 
 ## Prerequisites
 
-- **Python 3.10+** installed ([python.org](https://www.python.org/downloads/))
-- A **Buildertrend** account with API access
+- **Python 3.10+** ([python.org](https://www.python.org/downloads/))
+- A **Buildertrend** account (your normal login — no API access needed)
 - A **Google Cloud** project with the Drive API enabled
 
 ---
 
-## 1. Get Buildertrend API Credentials
+## 1. Set Up Google Drive Access
 
-Buildertrend uses OAuth2 (client credentials). You need a **Client ID** and
-**Client Secret**.
-
-1. Contact your Buildertrend account representative or visit the Buildertrend
-   developer / integrations portal.
-2. Request API access for your account. Specify that you need read access to
-   **Daily Logs** (including photo attachments).
-3. Once approved you will receive:
-   - `client_id`
-   - `client_secret`
-4. Keep these values safe — you will paste them into your `.env` file in step 3.
-
----
-
-## 2. Set Up a Google Cloud Service Account for Drive Access
-
-### 2a. Create a Google Cloud Project
+### 1a. Create a Google Cloud Project
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com/).
-2. Click the project dropdown at the top → **New Project**.
-3. Name it something like `bt-drive-sync` and click **Create**.
+2. Click the project dropdown → **New Project**.
+3. Name it `bt-drive-sync` and click **Create**.
 
-### 2b. Enable the Google Drive API
+### 1b. Enable the Google Drive API
 
-1. In the Cloud Console, go to **APIs & Services → Library**.
+1. Go to **APIs & Services → Library**.
 2. Search for **Google Drive API** and click **Enable**.
 
-### 2c. Create a Service Account
+### 1c. Create a Service Account
 
 1. Go to **APIs & Services → Credentials**.
 2. Click **Create Credentials → Service Account**.
-3. Name: `bt-drive-sync` (or anything you like). Click **Create and Continue**.
-4. Skip the optional role/access steps for now — click **Done**.
-5. On the Credentials page, click the new service account email.
-6. Go to the **Keys** tab → **Add Key → Create new key → JSON**.
-7. A `.json` file will download — this is your service account key file.
-   Save it somewhere secure (e.g., next to this project).
+3. Name: `bt-drive-sync`. Click **Create and Continue**.
+4. Skip the optional role steps — click **Done**.
+5. Click the new service account email on the Credentials page.
+6. Go to **Keys** tab → **Add Key → Create new key → JSON**.
+7. A `.json` file will download — save it somewhere secure.
 
-### 2d. Share Your Google Drive Folder with the Service Account
+### 1d. Share Your Google Drive Folder
 
-1. Open the service account JSON file and copy the `client_email` value
-   (looks like `bt-drive-sync@your-project.iam.gserviceaccount.com`).
-2. In Google Drive, navigate to the **root folder** where the
-   `Marketing/Active Projects/...` structure should live.
-3. Right-click → **Share** → paste the service account email → give it
-   **Editor** access → click **Send** (uncheck "Notify people" if prompted).
-4. Copy the **folder ID** from the URL bar — it is the long string after
-   `/folders/` in the URL. You will need this for your `.env` file.
+1. Open the service account JSON and copy the `client_email` value
+   (e.g., `bt-drive-sync@your-project.iam.gserviceaccount.com`).
+2. In Google Drive, navigate to the root folder where
+   `Marketing/Active Projects/...` should live.
+3. Right-click → **Share** → paste the service account email →
+   give **Editor** access → click **Send**.
+4. Copy the **folder ID** from the URL bar (the long string after `/folders/`).
 
 ---
 
-## 3. Configure the `.env` File
+## 2. Configure the `.env` File
 
-1. Copy the example file:
+```bash
+cp .env.example .env
+```
 
-   ```bash
-   cp .env.example .env
-   ```
+Open `.env` and fill in:
 
-2. Open `.env` in a text editor and fill in every value:
+| Variable                      | What to put                                       |
+| ----------------------------- | ------------------------------------------------- |
+| `BT_USERNAME`                 | Your Buildertrend login email                     |
+| `BT_PASSWORD`                 | Your Buildertrend password                        |
+| `BT_LOGIN_URL`                | (Optional) Defaults to `https://buildertrend.net` |
+| `GOOGLE_SERVICE_ACCOUNT_FILE` | Full path to the `.json` key file from step 1c    |
+| `GOOGLE_DRIVE_ROOT_FOLDER_ID` | The folder ID from step 1d                        |
+| `HEADLESS`                    | `true` for invisible browser, `false` to watch it |
 
-   | Variable                       | What to put                                      |
-   | ------------------------------ | ------------------------------------------------ |
-   | `BT_CLIENT_ID`                 | Your Buildertrend client ID                      |
-   | `BT_CLIENT_SECRET`             | Your Buildertrend client secret                  |
-   | `GOOGLE_SERVICE_ACCOUNT_FILE`  | Full path to the `.json` key file from step 2c   |
-   | `GOOGLE_DRIVE_ROOT_FOLDER_ID`  | The folder ID from step 2d                       |
-   | `LOG_FILE`                     | (Optional) Path for the log file, defaults to `sync.log` |
-
-> **Important:** Never commit the `.env` file or the service account JSON to
-> version control. Both are listed in `.gitignore`.
+> **Never commit `.env` or the service account JSON.** Both are in `.gitignore`.
 
 ---
 
-## 4. Install Dependencies
+## 3. Install Dependencies
 
 ```bash
 # Create a virtual environment (recommended)
@@ -107,15 +99,29 @@ python3 -m venv venv
 source venv/bin/activate        # macOS / Linux
 # venv\Scripts\activate         # Windows
 
-# Install packages
+# Install Python packages
 pip install -r requirements.txt
+
+# Install Playwright's browser binary (one-time)
+playwright install chromium
 ```
 
 ---
 
-## 5. Run the Script
+## 4. First Run — Use Headed Mode
 
-### Run manually (pulls today's logs)
+For your first run, use `--headed` so you can watch the browser and confirm
+it logs in and navigates correctly:
+
+```bash
+python bt_drive_sync.py --headed
+```
+
+If the script can't find the right fields or pages, it saves debug screenshots
+(`debug_login_page.png`, `debug_no_dailylogs.png`, etc.) so you can see
+exactly what the browser saw.
+
+Once you've confirmed it works, switch to headless:
 
 ```bash
 python bt_drive_sync.py
@@ -129,21 +135,19 @@ python bt_drive_sync.py 2025-11-15
 
 ---
 
-## 6. Schedule It to Run Daily
+## 5. Schedule It to Run Daily
 
 ### Linux / macOS — cron
 
-1. Open your crontab:
+```bash
+crontab -e
+```
 
-   ```bash
-   crontab -e
-   ```
+Add a line to run at 9 PM daily (adjust paths):
 
-2. Add a line to run at 9 PM every day (adjust the time and paths):
-
-   ```
-   0 21 * * * /home/youruser/bt-drive-sync/venv/bin/python /home/youruser/bt-drive-sync/bt_drive_sync.py >> /home/youruser/bt-drive-sync/cron.log 2>&1
-   ```
+```
+0 21 * * * cd /home/youruser/bt-drive-sync && /home/youruser/bt-drive-sync/venv/bin/python bt_drive_sync.py >> cron.log 2>&1
+```
 
 ### Windows — Task Scheduler
 
@@ -152,28 +156,13 @@ python bt_drive_sync.py 2025-11-15
 3. Trigger: **Daily**, set the time (e.g., 9:00 PM).
 4. Action: **Start a program**.
    - Program: `C:\path\to\venv\Scripts\python.exe`
-   - Arguments: `C:\path\to\bt_drive_sync.py`
+   - Arguments: `bt_drive_sync.py`
    - Start in: `C:\path\to\project-folder`
-5. Finish. Right-click the task → **Run** to test it.
+5. Finish. Right-click → **Run** to test.
 
 ---
 
-## How It Works
-
-1. **Authenticates** with Buildertrend via OAuth2 client credentials.
-2. **Fetches** all Daily Logs for today's date (tries `/v2/dailylogs` then `/v1/dailylogs`).
-3. For each log with photos:
-   - Extracts the project name.
-   - Downloads each photo attachment.
-   - Renames it: `ProjectName_YYYYMMDD_LogPhoto_01.jpg`.
-   - Creates the Google Drive folder path if it does not exist.
-   - Skips the upload if a file with the same name already exists (no duplicates).
-   - Uploads the photo.
-4. Writes a summary to `sync.log` (and to the console).
-
----
-
-## Folder Structure Created in Google Drive
+## Folder Structure in Google Drive
 
 ```
 [Your Root Folder]/
@@ -198,12 +187,33 @@ python bt_drive_sync.py 2025-11-15
 
 | Problem | Solution |
 | ------- | -------- |
-| `Missing required environment variables` | Check that `.env` exists and all values are filled in. |
-| `Service account file not found` | Verify the `GOOGLE_SERVICE_ACCOUNT_FILE` path is correct and the file exists. |
-| `Cannot authenticate with Buildertrend` | Double-check `BT_CLIENT_ID` and `BT_CLIENT_SECRET`. Contact your BT rep if they have expired. |
-| `No daily logs found` | Confirm that daily logs were actually created in Buildertrend on the target date. |
-| `403 on Google Drive` | Make sure you shared the Drive folder with the service account email (step 2d). |
-| Photos appear in Drive but are 0 bytes | The download URL from Buildertrend may have expired. Re-run the script. |
+| `Could not find username field` | Run with `--headed` to see the login page. The script saves `debug_login_page.png`. BT may have changed their login form — you may need to update the CSS selectors in `bt_login()`. |
+| `Login failed` | Check `BT_USERNAME` and `BT_PASSWORD` in `.env`. Try logging in manually in a browser to confirm they work. Check `debug_login_failed.png`. |
+| `Could not find daily logs page` | Run `--headed` and check `debug_no_dailylogs.png`. BT's URL structure may differ for your account — you can add your URL to the `candidate_urls` list in `bt_navigate_to_daily_logs()`. |
+| `No photos found` | Make sure daily logs with photos exist for the target date. Check the debug screenshots. |
+| `Service account file not found` | Verify the `GOOGLE_SERVICE_ACCOUNT_FILE` path in `.env`. |
+| `403 on Google Drive` | Share the Drive folder with the service account email (step 1d). |
+| `playwright install` fails | Run `playwright install --with-deps chromium` to also install system dependencies. |
+
+---
+
+## Adjusting for Your Buildertrend Setup
+
+Buildertrend's web interface can vary. If the script doesn't find the right
+pages or photos automatically, you may need to tweak a few things:
+
+1. **Login selectors** — Open `bt_drive_sync.py` and look at `bt_login()`.
+   The script tries multiple CSS selectors for the username/password fields.
+   Run `--headed`, see what the login page looks like, and adjust.
+
+2. **Daily log URLs** — In `bt_navigate_to_daily_logs()`, there's a list of
+   `candidate_urls`. Add the URL you see when you manually browse to Daily Logs.
+
+3. **Photo detection** — `bt_collect_photos()` captures images via network
+   interception and DOM scraping. The `_is_photo_url()` filter skips icons
+   and avatars. Adjust if needed.
+
+The script saves **debug screenshots** at every failure point to make this easy.
 
 ---
 
