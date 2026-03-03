@@ -1,0 +1,17 @@
+# Environment and secrets
+.env
+*.json
+!package.json
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
