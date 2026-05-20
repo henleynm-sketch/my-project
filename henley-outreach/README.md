@@ -1,27 +1,36 @@
 # henley-outreach
 
-Hybrid outreach tool for Nick Henley (Henley Contracting Ltd.).
+Omnichannel outreach hub for Nick Henley (Henley Contracting Ltd.).
 
-- **Email channel** — when HubSpot has an email, the tool auto-sends and logs the engagement.
-- **LinkedIn channel** — when there is no email, the tool produces a ranked daily action list: one click to copy the draft, one click to open the contact's LinkedIn, one click to mark as sent. No LinkedIn automation, no ToS risk.
+## Channels
 
-## Phase 1 status
+| Channel | Mode | Transport |
+|---|---|---|
+| Email | auto-send | Microsoft Graph (Outlook / M365) |
+| SMS | auto-send | OpenPhone / Quo |
+| WhatsApp | auto-send | Meta WhatsApp Business |
+| Facebook Messenger | hybrid (24h window) | Meta Graph |
+| Instagram DM | hybrid (24h window) | Meta Graph |
+| LinkedIn | action list | manual copy-paste |
 
-Scaffold + DB schema + HubSpot connector with one test call. Not yet wired into a full pipeline. Email transport (Gmail API vs HubSpot transactional vs SMTP) will be chosen in Phase 5.
+"Action list" channels surface as a ranked daily worklist; the tool never automates LinkedIn. The Meta channels auto-send only inside the platform-mandated 24h customer-service window — outside it, they fall through to the action list.
 
 ## Setup
 
 ```bash
 cp .env.example .env
-# fill in ANTHROPIC_API_KEY and HUBSPOT_ACCESS_TOKEN
+# fill in credentials for whichever channels you want enabled — others will be skipped
 npm install
 ```
 
-## Verify Phase 1
+## Verify
 
 ```bash
-npm run test:hubspot   # hits HubSpot /account-info/v3/details and prints portal info
-npm start              # boots Express on http://localhost:3000 with a health route
+npm run test:hubspot      # HubSpot account/portal lookup
+npm run test:connectors   # smoke-tests every channel whose env vars are configured
+npm start                 # boots Express on http://localhost:3000
 ```
 
-Full README (HubSpot private-app setup, LinkedIn CSV export, weekly workflow) lands in Phase 6.
+## Status
+
+Phase 1: scaffold, generic channel/contact schema, connector stubs for every transport. No pipeline wired yet — drafting, ranking, and the worklist UI come in later phases.

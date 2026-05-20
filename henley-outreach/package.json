@@ -1,7 +1,7 @@
 {
   "name": "henley-outreach",
   "version": "0.1.0",
-  "description": "HubSpot-integrated LinkedIn outreach drafting tool for Nick Henley. Drafts and logs only — never sends.",
+  "description": "Omnichannel outreach hub for Nick Henley. Auto-sends email/SMS/WhatsApp/Meta; surfaces LinkedIn as a ranked action list.",
   "type": "module",
   "private": true,
   "engines": {
@@ -11,7 +11,8 @@
     "start": "node src/server.js",
     "ingest": "node src/pipeline/ingest.js",
     "followups": "node -e \"import('./src/pipeline/followups.js').then(m => m.checkDue())\"",
-    "test:hubspot": "node src/connectors/hubspot.js"
+    "test:hubspot": "node src/connectors/hubspot.js",
+    "test:connectors": "node src/scripts/testConnectors.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
