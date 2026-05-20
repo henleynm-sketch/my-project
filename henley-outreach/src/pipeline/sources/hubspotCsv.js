@@ -26,6 +26,12 @@ function pick(row, ...keys) {
   return null;
 }
 
+function toInt(v) {
+  if (v == null) return 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
 export function parseHubSpotCsv(filepath) {
   const raw = readFileSync(filepath, 'utf8');
   const rows = parse(raw, {
@@ -54,8 +60,12 @@ export function parseHubSpotCsv(filepath) {
     const lifecycle = pick(row, 'Lifecycle Stage');
     const leadStatus = pick(row, 'Lead Status');
     const lastActivity = pick(row, 'Last Activity Date');
+    const lastContacted = pick(row, 'Last Contacted');
     const projectType = pick(row, 'Project Type');
     const serviceInterest = pick(row, 'Service Interest');
+    const emailsOpened = toInt(pick(row, 'Marketing emails opened'));
+    const emailsClicked = toInt(pick(row, 'Marketing emails clicked'));
+    const emailsReplied = toInt(pick(row, 'Marketing emails replied'));
 
     const channels = [];
     if (email) channels.push({ channel: 'email', address: email, isPrimary: true });
@@ -79,6 +89,14 @@ export function parseHubSpotCsv(filepath) {
       headline: jobTitle,
       segment,
       hubspotContactId: recordId,
+      signals: {
+        lifecycle_stage: lifecycle,
+        last_activity_at: lastActivity,
+        last_contacted_at: lastContacted,
+        emails_opened: emailsOpened,
+        emails_clicked: emailsClicked,
+        emails_replied: emailsReplied,
+      },
       notes: [
         lifecycle ? `Lifecycle: ${lifecycle}` : null,
         leadStatus ? `Lead status: ${leadStatus}` : null,

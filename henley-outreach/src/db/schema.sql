@@ -13,7 +13,14 @@ CREATE TABLE IF NOT EXISTS contacts (
   hubspot_contact_id TEXT,
   hubspot_company_id TEXT,
   hubspot_context_json TEXT,
-  priority_score REAL,                -- ranking signal for the daily worklist
+  -- ranking signals (populated by ingest where available)
+  lifecycle_stage TEXT,
+  last_activity_at DATETIME,
+  last_contacted_at DATETIME,
+  emails_opened INTEGER DEFAULT 0,
+  emails_clicked INTEGER DEFAULT 0,
+  emails_replied INTEGER DEFAULT 0,
+  priority_score REAL,                -- computed; recompute via npm run rescore
   notes TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

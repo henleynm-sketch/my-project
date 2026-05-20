@@ -14,8 +14,14 @@ const findByAddressStmt = db.prepare(
 );
 
 const insertContactStmt = db.prepare(`
-  INSERT INTO contacts (full_name, company, headline, segment, source, source_ref, hubspot_contact_id, notes)
-  VALUES (@full_name, @company, @headline, @segment, @source, @source_ref, @hubspot_contact_id, @notes)
+  INSERT INTO contacts
+    (full_name, company, headline, segment, source, source_ref, hubspot_contact_id, notes,
+     lifecycle_stage, last_activity_at, last_contacted_at,
+     emails_opened, emails_clicked, emails_replied)
+  VALUES
+    (@full_name, @company, @headline, @segment, @source, @source_ref, @hubspot_contact_id, @notes,
+     @lifecycle_stage, @last_activity_at, @last_contacted_at,
+     @emails_opened, @emails_clicked, @emails_replied)
 `);
 
 const updateContactStmt = db.prepare(`
@@ -25,6 +31,12 @@ const updateContactStmt = db.prepare(`
     headline  = COALESCE(@headline, headline),
     segment   = COALESCE(@segment, segment),
     hubspot_contact_id = COALESCE(@hubspot_contact_id, hubspot_contact_id),
+    lifecycle_stage   = COALESCE(@lifecycle_stage, lifecycle_stage),
+    last_activity_at  = COALESCE(@last_activity_at, last_activity_at),
+    last_contacted_at = COALESCE(@last_contacted_at, last_contacted_at),
+    emails_opened  = MAX(COALESCE(emails_opened, 0),  COALESCE(@emails_opened, 0)),
+    emails_clicked = MAX(COALESCE(emails_clicked, 0), COALESCE(@emails_clicked, 0)),
+    emails_replied = MAX(COALESCE(emails_replied, 0), COALESCE(@emails_replied, 0)),
     notes     = CASE
                   WHEN @notes IS NULL THEN notes
                   WHEN notes IS NULL THEN @notes
@@ -62,6 +74,7 @@ function findExistingContact(rec) {
 // Insert a normalized record, merging into any existing contact that shares
 // a HubSpot ID, source ref, or channel address. Returns { contactId, created }.
 export function ingestRecord(rec, channelModeFor) {
+  const sig = rec.signals || {};
   const row = {
     full_name: rec.fullName,
     company: rec.company || null,
@@ -71,6 +84,12 @@ export function ingestRecord(rec, channelModeFor) {
     source_ref: rec.sourceRef || null,
     hubspot_contact_id: rec.hubspotContactId || null,
     notes: rec.notes || null,
+    lifecycle_stage: sig.lifecycle_stage || null,
+    last_activity_at: sig.last_activity_at || null,
+    last_contacted_at: sig.last_contacted_at || null,
+    emails_opened: sig.emails_opened || 0,
+    emails_clicked: sig.emails_clicked || 0,
+    emails_replied: sig.emails_replied || 0,
   };
 
   let contactId = findExistingContact(rec);
