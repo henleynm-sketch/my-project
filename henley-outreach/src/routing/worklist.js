@@ -19,7 +19,9 @@ const latestAttemptStmt = db.prepare(`
    LIMIT 1
 `);
 
-export function buildWorklist({ limit = 100, includeReplied = false } = {}) {
+const DEFAULT_HIDDEN_STATUSES = new Set(['replied', 'skipped', 'sent']);
+
+export function buildWorklist({ limit = 100, includeAll = false } = {}) {
   // Only consider contacts with at least one reachable channel — otherwise the
   // limit is "burned" on contacts pickChannel() will reject anyway.
   const contacts = db
@@ -39,7 +41,7 @@ export function buildWorklist({ limit = 100, includeReplied = false } = {}) {
 
     const latest = latestAttemptStmt.get(c.id, channel.id);
     const status = latest ? latest.status : 'needs_draft';
-    if (status === 'replied' && !includeReplied) continue;
+    if (!includeAll && DEFAULT_HIDDEN_STATUSES.has(status)) continue;
 
     out.push({
       contact: c,

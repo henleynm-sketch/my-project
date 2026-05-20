@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Henley Outreach</title>
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --panel: #ffffff;
+      --line: #e7e4dd;
+      --ink: #1c1b18;
+      --muted: #76726a;
+      --accent: #2f5d4a;
+      --warn: #b07a2c;
+      --bad: #a13c2c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+    header { padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: baseline; gap: 24px; }
+    header h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+    header .stat { color: var(--muted); font-size: 13px; }
+    main { padding: 16px 24px 40px; }
+    .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .filters select, .filters input {
+      font: inherit; padding: 6px 10px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px;
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: #f4f2ec; }
+    tr:hover td { background: #fbfaf6; }
+    td.score { font-variant-numeric: tabular-nums; font-weight: 600; }
+    td.name { font-weight: 500; }
+    td .meta { display: block; color: var(--muted); font-size: 12px; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; background: #efece4; color: var(--ink); }
+    .pill.email     { background: #e3eee8; color: var(--accent); }
+    .pill.sms       { background: #e9e3ee; color: #604a8a; }
+    .pill.whatsapp  { background: #e0efe5; color: #2f6b48; }
+    .pill.messenger { background: #e3eaef; color: #3a5d8a; }
+    .pill.instagram { background: #f3e3ec; color: #8a3a6b; }
+    .pill.linkedin  { background: #e1ebf2; color: #2a567a; }
+    .pill.status-needs_draft { background: #f4ece0; color: var(--warn); }
+    .pill.status-draft       { background: #f4ece0; color: var(--warn); }
+    .pill.status-approved    { background: #e0efe5; color: var(--accent); }
+    .pill.status-sent        { background: #e9e3ee; color: #604a8a; }
+    .pill.status-skipped     { background: #efece4; color: var(--muted); }
+    button {
+      font: inherit; padding: 5px 10px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px;
+      cursor: pointer; color: var(--ink);
+    }
+    button:hover { background: #f4f2ec; }
+    button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    button.primary:hover { background: #284e3e; }
+    button.danger { color: var(--bad); }
+    button[disabled] { opacity: 0.5; cursor: not-allowed; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .drawer {
+      position: fixed; right: 0; top: 0; bottom: 0; width: 540px; max-width: 90vw;
+      background: var(--panel); border-left: 1px solid var(--line); padding: 24px; overflow-y: auto;
+      transform: translateX(100%); transition: transform 0.2s ease; box-shadow: -8px 0 24px rgba(0,0,0,0.05);
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer h2 { margin: 0 0 4px; font-size: 18px; }
+    .drawer .meta { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .drawer label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 14px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .drawer input[type=text], .drawer textarea {
+      width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg);
+    }
+    .drawer textarea { min-height: 220px; resize: vertical; font-family: 'SF Mono', 'Monaco', monospace; font-size: 13px; }
+    .drawer .row { display: flex; gap: 8px; margin-top: 18px; }
+    .empty { color: var(--muted); padding: 24px; text-align: center; }
+    .spin { color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Henley Outreach</h1>
+    <span class="stat" id="stat">loading…</span>
+  </header>
+  <main>
+    <div class="filters">
+      <select id="filter-segment">
+        <option value="">All segments</option>
+      </select>
+      <select id="filter-status">
+        <option value="">All statuses</option>
+        <option value="needs_draft">Needs draft</option>
+        <option value="draft">Draft</option>
+        <option value="approved">Approved</option>
+        <option value="sent">Sent</option>
+        <option value="skipped">Skipped</option>
+      </select>
+      <input id="filter-search" type="text" placeholder="Search name or company…" />
+      <button id="refresh">Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 60px">Score</th>
+          <th>Contact</th>
+          <th>Segment</th>
+          <th>Channel</th>
+          <th>Status</th>
+          <th style="width: 180px">Action</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty" style="display:none">No matching items.</div>
+  </main>
+
+  <div class="drawer" id="drawer">
+    <button onclick="closeDrawer()" style="float:right">Close</button>
+    <h2 id="d-name"></h2>
+    <div class="meta" id="d-meta"></div>
+    <div id="d-content"></div>
+  </div>
+
+  <script>
+    let WORKLIST = [];
+    let CURRENT = null;
+
+    async function api(method, path, body) {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(path, opts);
+      const text = await res.text();
+      const json = text ? JSON.parse(text) : null;
+      if (!res.ok) throw new Error(json?.error || res.statusText);
+      return json;
+    }
+
+    async function load() {
+      document.getElementById('stat').textContent = 'loading…';
+      const [health, worklist] = await Promise.all([
+        api('GET', '/health'),
+        api('GET', '/worklist?limit=200'),
+      ]);
+      WORKLIST = worklist.items;
+      document.getElementById('stat').textContent =
+        `${health.contacts} contacts · ${health.channels} channels · ${worklist.count} actionable`;
+      populateSegmentFilter();
+      render();
+    }
+
+    function populateSegmentFilter() {
+      const sel = document.getElementById('filter-segment');
+      const segs = [...new Set(WORKLIST.map((i) => i.contact.segment).filter(Boolean))].sort();
+      sel.querySelectorAll('option:not(:first-child)').forEach((o) => o.remove());
+      for (const s of segs) {
+        const o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        sel.appendChild(o);
+      }
+    }
+
+    function filtered() {
+      const seg = document.getElementById('filter-segment').value;
+      const status = document.getElementById('filter-status').value;
+      const q = document.getElementById('filter-search').value.toLowerCase().trim();
+      return WORKLIST.filter((i) => {
+        if (seg && i.contact.segment !== seg) return false;
+        if (status && i.status !== status) return false;
+        if (q) {
+          const hay = `${i.contact.full_name || ''} ${i.contact.company || ''}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+    }
+
+    function render() {
+      const rows = filtered();
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = '';
+      document.getElementById('empty').style.display = rows.length ? 'none' : 'block';
+      for (const item of rows) {
+        const tr = document.createElement('tr');
+        const score = item.contact.priority_score != null ? Math.round(item.contact.priority_score) : '—';
+        const company = item.contact.company ? `<span class="meta">${escapeHtml(item.contact.company)}</span>` : '';
+        const headline = item.contact.headline ? `<span class="meta">${escapeHtml(item.contact.headline)}</span>` : '';
+        const ch = item.channel;
+        const status = item.status;
+        const actionBtn = status === 'needs_draft'
+          ? `<button class="primary" onclick="generateDraft(${item.contact.id}, '${ch.channel}')">Draft</button>`
+          : `<button onclick="openDrawer(${item.contact.id})">Review</button>`;
+        tr.innerHTML = `
+          <td class="score">${score}</td>
+          <td class="name">${escapeHtml(item.contact.full_name || '?')}${company}${headline}</td>
+          <td>${escapeHtml(item.contact.segment || '—')}</td>
+          <td><span class="pill ${ch.channel}">${ch.channel}</span><br><span class="meta">${escapeHtml(ch.address || '')}</span></td>
+          <td><span class="pill status-${status}">${status.replace('_', ' ')}</span></td>
+          <td class="actions">${actionBtn}<button class="danger" onclick="skipContact(${item.contact.id}, ${item.attempt?.id || 'null'}, '${ch.channel}')">Skip</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function generateDraft(contactId, channel) {
+      const item = WORKLIST.find((i) => i.contact.id === contactId);
+      if (item) item.status = 'drafting';
+      render();
+      try {
+        const { attempt } = await api('POST', `/contacts/${contactId}/draft`, { channel });
+        if (item) { item.attempt = attempt; item.status = attempt.status; }
+        render();
+        openDrawer(contactId);
+      } catch (e) {
+        alert('Draft failed: ' + e.message);
+        if (item) item.status = 'needs_draft';
+        render();
+      }
+    }
+
+    async function openDrawer(contactId) {
+      CURRENT = contactId;
+      const data = await api('GET', `/contacts/${contactId}`);
+      const c = data.contact;
+      const latest = data.attempts[0];
+      document.getElementById('d-name').textContent = c.full_name || '?';
+      const bits = [c.segment, c.company, c.headline, `score ${c.priority_score ? Math.round(c.priority_score) : '—'}`];
+      document.getElementById('d-meta').textContent = bits.filter(Boolean).join(' · ');
+      const content = document.getElementById('d-content');
+      if (!latest) {
+        content.innerHTML = '<p class="empty">No drafts yet.</p>';
+      } else {
+        const subjField = latest.draft_subject != null
+          ? `<label>Subject</label><input id="d-subject" type="text" value="${escapeAttr(latest.draft_subject)}">`
+          : '';
+        content.innerHTML = `
+          <label>Channel</label>
+          <div><span class="pill ${latest.channel}">${latest.channel}</span> <span class="meta">status: ${latest.status}</span></div>
+          ${subjField}
+          <label>Body</label>
+          <textarea id="d-body">${escapeHtml(latest.draft_body)}</textarea>
+          <div class="row">
+            <button onclick="saveEdits(${latest.id})">Save edits</button>
+            <button class="primary" onclick="approve(${latest.id})">Approve</button>
+            <button onclick="markSent(${latest.id})">Mark sent</button>
+            <button class="danger" onclick="skipAttempt(${latest.id})">Skip</button>
+          </div>
+        `;
+      }
+      document.getElementById('drawer').classList.add('open');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('open');
+      CURRENT = null;
+    }
+
+    async function saveEdits(attemptId) {
+      const subject = document.getElementById('d-subject')?.value;
+      const body = document.getElementById('d-body').value;
+      await api('PATCH', `/attempts/${attemptId}`, { subject, body });
+    }
+
+    async function approve(attemptId) { await transition(attemptId, 'approve'); }
+    async function markSent(attemptId) { await transition(attemptId, 'mark-sent'); }
+    async function skipAttempt(attemptId) { await transition(attemptId, 'skip'); }
+
+    async function transition(attemptId, action) {
+      const { attempt } = await api('POST', `/attempts/${attemptId}/${action}`);
+      const item = WORKLIST.find((i) => i.attempt && i.attempt.id === attempt.id);
+      if (item) { item.attempt = attempt; item.status = attempt.status; }
+      render();
+      closeDrawer();
+    }
+
+    async function skipContact(contactId, attemptId, channel) {
+      if (attemptId) {
+        await transition(attemptId, 'skip');
+      } else {
+        try {
+          const { attempt } = await api('POST', `/contacts/${contactId}/skip`, { channel });
+          const item = WORKLIST.find((i) => i.contact.id === contactId);
+          if (item) { item.status = 'skipped'; item.attempt = attempt; }
+          render();
+        } catch (e) {
+          alert('Skip failed: ' + e.message);
+        }
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+    document.getElementById('refresh').addEventListener('click', load);
+    document.getElementById('filter-segment').addEventListener('change', render);
+    document.getElementById('filter-status').addEventListener('change', render);
+    document.getElementById('filter-search').addEventListener('input', render);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+    load();
+  </script>
+</body>
+</html>
