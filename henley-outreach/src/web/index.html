@@ -119,6 +119,8 @@
   <script>
     let WORKLIST = [];
     let CURRENT = null;
+    let LIVE_SEND = false;
+    let SEND_LABEL = 'Send (dry-run)';
 
     async function api(method, path, body) {
       const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -137,8 +139,11 @@
         api('GET', '/worklist?limit=200'),
       ]);
       WORKLIST = worklist.items;
+      LIVE_SEND = !!health.liveSend;
+      SEND_LABEL = LIVE_SEND ? 'Send LIVE' : 'Send (dry-run)';
+      const modeBadge = LIVE_SEND ? ' · 🔴 LIVE SEND' : ' · dry-run';
       document.getElementById('stat').textContent =
-        `${health.contacts} contacts · ${health.channels} channels · ${worklist.count} actionable`;
+        `${health.contacts} contacts · ${health.channels} channels · ${worklist.count} actionable${modeBadge}`;
       populateSegmentFilter();
       render();
     }
@@ -236,7 +241,7 @@
           <div class="row">
             <button onclick="saveEdits(${latest.id})">Save edits</button>
             <button class="primary" onclick="approve(${latest.id})">Approve</button>
-            <button onclick="markSent(${latest.id})">Mark sent</button>
+            <button class="primary" onclick="sendAttempt(${latest.id})">${SEND_LABEL}</button>
             <button class="danger" onclick="skipAttempt(${latest.id})">Skip</button>
           </div>
         `;
@@ -256,8 +261,25 @@
     }
 
     async function approve(attemptId) { await transition(attemptId, 'approve'); }
-    async function markSent(attemptId) { await transition(attemptId, 'mark-sent'); }
     async function skipAttempt(attemptId) { await transition(attemptId, 'skip'); }
+
+    async function sendAttempt(attemptId) {
+      const confirmMsg = LIVE_SEND
+        ? 'LIVE SEND is enabled. This will actually transmit the message. Proceed?'
+        : 'Dry-run send (no external API call). Proceed?';
+      if (!confirm(confirmMsg)) return;
+      try {
+        const { attempt, result } = await api('POST', `/attempts/${attemptId}/send`);
+        const item = WORKLIST.find((i) => i.attempt && i.attempt.id === attempt.id);
+        if (item) { item.attempt = attempt; item.status = attempt.status; }
+        render();
+        closeDrawer();
+        const tag = result.mode === 'live' ? 'LIVE sent' : result.mode === 'dry-run' ? 'Dry-run sent' : 'Marked sent';
+        alert(`${tag}: ${attempt.channel} -> ${attemptId}`);
+      } catch (e) {
+        alert('Send failed: ' + e.message);
+      }
+    }
 
     async function transition(attemptId, action) {
       const { attempt } = await api('POST', `/attempts/${attemptId}/${action}`);

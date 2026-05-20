@@ -7,6 +7,7 @@ import { countContacts, countChannels } from './db/contacts.js';
 import { createDraft, setAttemptStatus } from './db/attempts.js';
 import { buildWorklist } from './routing/worklist.js';
 import { draftMessage } from './drafting/draft.js';
+import { sendAttempt, liveSendEnabled } from './pipeline/runner.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +23,7 @@ app.get('/health', (_req, res) => {
     contacts: countContacts(),
     channels: countChannels(),
     attempts,
+    liveSend: liveSendEnabled(),
   });
 });
 
@@ -137,6 +139,18 @@ app.post('/attempts/:id/mark-sent', (req, res) => {
   setAttemptStatus({ id, status: 'sent' });
   const attempt = db.prepare(`SELECT * FROM outreach_attempts WHERE id = ?`).get(id);
   res.json({ attempt });
+});
+
+// Dispatch the actual send via the connector layer. Dry-run unless LIVE_SEND=1.
+app.post('/attempts/:id/send', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await sendAttempt(id);
+    const attempt = db.prepare(`SELECT * FROM outreach_attempts WHERE id = ?`).get(id);
+    res.json({ attempt, result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(config.port, () => {
