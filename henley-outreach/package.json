@@ -12,7 +12,8 @@
     "ingest": "node src/pipeline/ingest.js",
     "followups": "node -e \"import('./src/pipeline/followups.js').then(m => m.checkDue())\"",
     "test:hubspot": "node src/connectors/hubspot.js",
-    "test:connectors": "node src/scripts/testConnectors.js"
+    "test:connectors": "node src/scripts/testConnectors.js",
+    "draft": "node src/scripts/draftOne.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
