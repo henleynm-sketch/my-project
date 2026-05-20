@@ -20,11 +20,14 @@ const latestAttemptStmt = db.prepare(`
 `);
 
 export function buildWorklist({ limit = 100, includeReplied = false } = {}) {
+  // Only consider contacts with at least one reachable channel — otherwise the
+  // limit is "burned" on contacts pickChannel() will reject anyway.
   const contacts = db
     .prepare(
-      `SELECT id, full_name, company, headline, segment, priority_score
-         FROM contacts
-        ORDER BY priority_score DESC NULLS LAST, id ASC
+      `SELECT c.id, c.full_name, c.company, c.headline, c.segment, c.priority_score
+         FROM contacts c
+        WHERE EXISTS (SELECT 1 FROM contact_channels cc WHERE cc.contact_id = c.id)
+        ORDER BY c.priority_score DESC NULLS LAST, c.id ASC
         LIMIT ?`,
     )
     .all(limit);

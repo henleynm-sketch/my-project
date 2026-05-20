@@ -1,113 +1,97 @@
-// LinkedIn connections CSV → contacts + contact_channels.
-//
-// Standard LinkedIn export columns:
-//   First Name, Last Name, URL, Email Address, Company, Position, Connected On
+// Ingest dispatcher. Auto-detects file type from name, or accepts an explicit
+// --source flag. Routes to the right adapter, runs cross-source dedup, prints
+// a summary.
 //
 // Usage:
-//   npm run ingest -- path/to/Connections.csv
-// Defaults to data/Connections.csv if no path is given.
+//   npm run ingest -- data/_fixtures/HubSpotContacts.csv
+//   npm run ingest -- --source linkedin data/Connections.csv
+//   npm run ingest -- data/_fixtures/*.xlsx data/_fixtures/HubSpotContacts.csv
 
-import { readFileSync, existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { parse } from 'csv-parse/sync';
-import { channels } from '../config.js';
-import { upsertContact, addChannel, countContacts, countChannels } from '../db/contacts.js';
+import { basename, resolve } from 'node:path';
+import { existsSync, statSync } from 'node:fs';
+import { channels as channelRegistry } from '../config.js';
+import { ingestRecord, countContacts, countChannels, countBySegment, countByChannel } from '../db/contacts.js';
+import { parseLinkedInCsv } from './sources/linkedinCsv.js';
+import { parseBuilderTrendLeads } from './sources/buildertrendLeads.js';
+import { parseBuilderTrendSubs } from './sources/buildertrendSubs.js';
+import { parseBuilderTrendClients } from './sources/buildertrendClients.js';
+import { parseHubSpotCsv } from './sources/hubspotCsv.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCES = {
+  linkedin: parseLinkedInCsv,
+  hubspot:  parseHubSpotCsv,
+  leads:    parseBuilderTrendLeads,
+  subs:     parseBuilderTrendSubs,
+  clients:  parseBuilderTrendClients,
+};
 
-// LinkedIn prefixes the CSV with a "Notes:" banner — skip until the header row.
-function stripLinkedInPreamble(raw) {
-  const lines = raw.split(/\r?\n/);
-  // Real header row starts with "First Name," — distinguishes it from the preamble
-  // text that mentions column names inside a quoted sentence.
-  const headerIdx = lines.findIndex((l) => /^\s*"?First Name"?\s*,/i.test(l));
-  if (headerIdx <= 0) return raw;
-  return lines.slice(headerIdx).join('\n');
-}
-
-function pick(row, ...keys) {
-  for (const k of keys) {
-    const v = row[k];
-    if (v != null && String(v).trim() !== '') return String(v).trim();
-  }
+function autoDetect(filepath) {
+  const name = basename(filepath).toLowerCase();
+  if (/connections.*\.csv$/.test(name)) return 'linkedin';
+  if (/allcontacts|hubspot.*\.csv$/.test(name)) return 'hubspot';
+  if (/^leads.*\.xlsx?$/.test(name) || /leads_\d+/.test(name)) return 'leads';
+  if (/^subs.*\.xlsx?$/.test(name)) return 'subs';
+  if (/client.*\.xlsx?$/.test(name)) return 'clients';
   return null;
 }
 
-export function ingestLinkedInCsv(csvPath) {
-  const raw = readFileSync(csvPath, 'utf8');
-  const cleaned = stripLinkedInPreamble(raw);
-  const rows = parse(cleaned, {
-    columns: true,
-    skip_empty_lines: true,
-    relax_column_count: true,
-    trim: true,
-  });
-
-  let added = 0;
-  let emailsAdded = 0;
-  let liUrlsAdded = 0;
-
-  for (const row of rows) {
-    const first = pick(row, 'First Name', 'first_name');
-    const last = pick(row, 'Last Name', 'last_name');
-    const fullName = [first, last].filter(Boolean).join(' ').trim();
-    if (!fullName) continue;
-
-    const url = pick(row, 'URL', 'Profile URL');
-    const email = pick(row, 'Email Address', 'Email');
-    const company = pick(row, 'Company', 'Current Company');
-    const position = pick(row, 'Position', 'Title', 'Headline');
-
-    const contactId = upsertContact({
-      full_name: fullName,
-      company,
-      headline: position,
-      source: 'linkedin_csv',
-      source_ref: url,
-    });
-    added++;
-
-    if (url) {
-      addChannel({
-        contactId,
-        channel: 'linkedin',
-        address: url,
-        mode: channels.linkedin.mode,
-        isPrimary: !email,
-      });
-      liUrlsAdded++;
-    }
-    if (email) {
-      addChannel({
-        contactId,
-        channel: 'email',
-        address: email.toLowerCase(),
-        mode: channels.email.mode,
-        isPrimary: true,
-      });
-      emailsAdded++;
+function parseArgs(argv) {
+  const out = { files: [], forcedSource: null };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--source') {
+      out.forcedSource = argv[++i];
+    } else if (!a.startsWith('--')) {
+      out.files.push(a);
     }
   }
-
-  return { processed: rows.length, contactsTouched: added, emailsAdded, liUrlsAdded };
+  return out;
 }
 
-// Run directly via `npm run ingest -- <path>`
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const arg = process.argv[2];
-  const defaultPath = join(__dirname, '..', '..', 'data', 'Connections.csv');
-  const csvPath = arg ? resolve(arg) : defaultPath;
+function channelModeFor(channel) {
+  return channelRegistry[channel]?.mode || 'auto';
+}
 
-  if (!existsSync(csvPath)) {
-    console.error(`CSV not found: ${csvPath}`);
-    console.error(
-      `Export LinkedIn → Settings → Data privacy → Get a copy of your data → Connections.`,
-    );
+function ingestFile(filepath, forcedSource) {
+  const source = forcedSource || autoDetect(filepath);
+  if (!source) {
+    throw new Error(`Could not auto-detect source for ${filepath}. Pass --source <linkedin|hubspot|leads|subs|clients>.`);
+  }
+  const parser = SOURCES[source];
+  if (!parser) throw new Error(`Unknown source: ${source}`);
+
+  console.log(`\n→ ${filepath} (as ${source})`);
+  const records = parser(filepath);
+  let created = 0;
+  let merged = 0;
+  for (const rec of records) {
+    const { created: isNew } = ingestRecord(rec, channelModeFor);
+    if (isNew) created++;
+    else merged++;
+  }
+  console.log(`   parsed: ${records.length}  new: ${created}  merged-into-existing: ${merged}`);
+}
+
+const args = parseArgs(process.argv);
+if (args.files.length === 0) {
+  console.error(`Usage: npm run ingest -- [--source <type>] <file> [<file>...]`);
+  console.error(`Source types: linkedin | hubspot | leads | subs | clients`);
+  process.exit(1);
+}
+
+for (const f of args.files) {
+  const fp = resolve(f);
+  if (!existsSync(fp) || !statSync(fp).isFile()) {
+    console.error(`Not a file: ${fp}`);
     process.exit(1);
   }
-
-  const result = ingestLinkedInCsv(csvPath);
-  console.log('Ingest complete:', result);
-  console.log(`Contacts in DB: ${countContacts()} | channel rows: ${countChannels()}`);
+  ingestFile(fp, args.forcedSource);
 }
+
+console.log('\n=== Summary ===');
+console.log(`Total contacts:  ${countContacts()}`);
+console.log(`Total channels:  ${countChannels()}`);
+console.log(`\nBy segment:`);
+for (const r of countBySegment()) console.log(`  ${r.segment.padEnd(20)} ${r.n}`);
+console.log(`\nBy channel:`);
+for (const r of countByChannel()) console.log(`  ${r.channel.padEnd(20)} ${r.n}`);
