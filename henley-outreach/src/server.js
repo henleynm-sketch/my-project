@@ -2,6 +2,7 @@ import express from 'express';
 import { config } from './config.js';
 import { db } from './db/client.js';
 import { countContacts, countChannels } from './db/contacts.js';
+import { buildWorklist } from './routing/worklist.js';
 
 const app = express();
 app.use(express.json());
@@ -31,6 +32,13 @@ app.get('/contacts', (req, res) => {
     )
     .all(limit);
   res.json({ count: rows.length, contacts: rows });
+});
+
+app.get('/worklist', (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 100, 500);
+  const includeReplied = req.query.includeReplied === '1';
+  const items = buildWorklist({ limit, includeReplied });
+  res.json({ count: items.length, items });
 });
 
 app.listen(config.port, () => {
