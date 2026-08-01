@@ -45,7 +45,7 @@ jobs:
         run: npx prisma generate --schema packages/db/prisma/schema.prisma
 
       - name: TypeScript no-emit check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Build
         run: npm run build
