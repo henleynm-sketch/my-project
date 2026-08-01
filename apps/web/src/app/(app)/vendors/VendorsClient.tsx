@@ -10,7 +10,7 @@ import { createVendor, updateVendor, deleteVendor } from "./vendorActions";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Vendor = {
+export type Vendor = {
   id: string;
   name: string;
   trade: string | null;
@@ -41,9 +41,9 @@ type Props = {
 
 // ─── COI status helpers ───────────────────────────────────────────────────────
 
-type CoiStatus = "expired" | "expiring" | "ok" | "none";
+export type CoiStatus = "expired" | "expiring" | "ok" | "none";
 
-function getCoiStatus(coiExpiresAt: string | null): CoiStatus {
+export function getCoiStatus(coiExpiresAt: string | null): CoiStatus {
   if (!coiExpiresAt) return "none";
   const exp = new Date(coiExpiresAt);
   const now = new Date();
@@ -54,7 +54,7 @@ function getCoiStatus(coiExpiresAt: string | null): CoiStatus {
   return "ok";
 }
 
-function CoiBadge({ coiExpiresAt }: { coiExpiresAt: string | null }) {
+export function CoiBadge({ coiExpiresAt }: { coiExpiresAt: string | null }) {
   const status = getCoiStatus(coiExpiresAt);
   if (status === "none") {
     return (
@@ -79,7 +79,7 @@ function CoiBadge({ coiExpiresAt }: { coiExpiresAt: string | null }) {
   );
 }
 
-function W9Badge({ onFile }: { onFile: boolean }) {
+export function W9Badge({ onFile }: { onFile: boolean }) {
   return onFile ? (
     <span
       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
@@ -118,7 +118,7 @@ function Toast({ msg, ok, onDone }: { msg: string; ok: boolean; onDone: () => vo
 
 // ─── Vendor form ──────────────────────────────────────────────────────────────
 
-function VendorForm({
+export function VendorForm({
   vendor,
   vendorTrades,
   vendorTypes,
@@ -126,6 +126,8 @@ function VendorForm({
   onSubmit,
   onCancel,
   pending,
+  defaultType,
+  addLabel = "Add vendor",
 }: {
   vendor?: Vendor;
   vendorTrades: string[];
@@ -134,6 +136,8 @@ function VendorForm({
   onSubmit: (fd: FormData) => void;
   onCancel: () => void;
   pending: boolean;
+  defaultType?: string;
+  addLabel?: string;
 }) {
   return (
     <form
@@ -160,7 +164,7 @@ function VendorForm({
         {/* Type */}
         <div>
           <label className="label text-xs">Vendor type</label>
-          <select className="input mt-0.5 text-sm" name="type" defaultValue={vendor?.type ?? ""}>
+          <select className="input mt-0.5 text-sm" name="type" defaultValue={vendor?.type ?? defaultType ?? ""}>
             <option value="">— Select type —</option>
             {vendorTypes.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
@@ -246,7 +250,7 @@ function VendorForm({
       <div className="flex gap-2 justify-end pt-1">
         <button type="button" onClick={onCancel} className="btn-ghost text-sm">Cancel</button>
         <button type="submit" className="btn-primary text-sm" disabled={pending}>
-          {pending ? "Saving…" : vendor ? "Save changes" : "Add vendor"}
+          {pending ? "Saving…" : vendor ? "Save changes" : addLabel}
         </button>
       </div>
     </form>
