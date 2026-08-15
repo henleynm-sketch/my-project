@@ -14,7 +14,19 @@ Convention: `[ ]` = open, `[x]` = done (keep done items for ~1 week then prune).
 - [ ] Confirm all 7 import files load (contacts, leads, subs, jobsites, milestones, profitability, hubspot)
 
 ### Next up
-- [ ] Subs directory page (list + detail) using BT subs import
+- [x] 2026-08-01 — Subs directory (list + detail) at `/subs`, filtered to `Vendor.type ===
+  "Subcontractor"`, reusing the Vendor model/actions (no schema change). List has
+  search/compliance filters + inline add; detail page (new — Vendors itself still has no
+  detail route) has contact info, COI/W-9 badges, inline edit, archive. Nav entry added for
+  CEO/OFFICE.
+  - Deliberately NOT done as part of this: a CSV-import path that creates Vendor rows (the
+    "BT subs import" in the item title). The generic importer (`Settings → Import data`)
+    only creates Client/Job records today (`IMPORT_SOURCES`/`IMPORT_FIELDS` in
+    `lib/importPresets.ts`) — extending it to also target Vendor needs a real design pass
+    (field set, source preset, dedup rule), not a bolt-on. Subs are added by hand via
+    "+ Add sub" for now.
+- [ ] Add a `buildertrend-subs` import preset that creates/updates `Vendor` rows (type=Subcontractor)
+  through the Settings → Import data wizard — the piece deferred above
 - [ ] Build out **Contracts** stub: Estimate → Contract conversion + PDF + e-sign + deposit
 - [ ] **Files** module: per-project library with role visibility (R2/S3)
 - [ ] **Selections** module: client-facing approval flow with deadlines
