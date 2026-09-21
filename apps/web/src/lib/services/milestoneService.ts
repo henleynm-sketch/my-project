@@ -58,3 +58,39 @@ export async function completeMilestone(id: string) {
   await getMilestoneById(id);
   return prisma.milestone.update({ where: { id }, data: { status: "DONE" } });
 }
+
+export type UpdateMilestoneInput = Partial<{
+  title: string;
+  description: string | null;
+  dueDate: string | Date | null;
+  clientVisible: boolean;
+  order: number;
+}>;
+
+export async function updateMilestone(id: string, input: UpdateMilestoneInput) {
+  await getMilestoneById(id);
+  const data: Record<string, unknown> = {};
+  if (input.title !== undefined) {
+    const title = input.title.trim();
+    if (!title) throw new ValidationError("title is required", { title: ["required"] });
+    data.title = title;
+  }
+  if (input.description !== undefined) data.description = input.description;
+  if (input.dueDate !== undefined) {
+    if (input.dueDate === null || input.dueDate === "") {
+      data.dueDate = null;
+    } else {
+      const d = new Date(input.dueDate);
+      if (isNaN(d.getTime())) throw new ValidationError("dueDate is invalid", { dueDate: ["invalid"] });
+      data.dueDate = d;
+    }
+  }
+  if (input.clientVisible !== undefined) data.clientVisible = input.clientVisible;
+  if (input.order !== undefined) data.order = input.order;
+  return prisma.milestone.update({ where: { id }, data });
+}
+
+export async function deleteMilestone(id: string) {
+  await getMilestoneById(id);
+  return prisma.milestone.delete({ where: { id } });
+}

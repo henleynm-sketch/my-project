@@ -7,6 +7,7 @@ import {
 } from "@/lib/jobBoard";
 import { isValidLeadSource } from "@/lib/taxonomy";
 import { listTasks, createTask as createHenleyTask } from "@/lib/henleyTasks";
+import { listEngagementSummaries } from "@/lib/services/engagementService";
 
 /**
  * Assistant tool layer. Every tool executes through the same authorization
@@ -151,22 +152,40 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: "list_ui_projects",
-    description: 'List UI "Projects" (client engagements that group jobs; DB model Engagement).',
-    input_schema: { type: "object", properties: {} },
+    description:
+      'List UI "Projects" (client engagements that group jobs; DB model Engagement) with PM health rollups: money, % complete, next milestone, and attention items (overdue/blocked milestones, over budget, COs awaiting client, schedule slips, stale or late jobs). Optional status filter: ACTIVE | ON_HOLD | COMPLETE.',
+    input_schema: {
+      type: "object",
+      properties: { status: { type: "string", enum: ["ACTIVE", "ON_HOLD", "COMPLETE"] } },
+    },
     roles: OFFICE,
     write: false,
-    async execute() {
-      const rows = await prisma.engagement.findMany({
-        orderBy: { updatedAt: "desc" },
-        include: { client: { select: { name: true } }, jobs: { select: { id: true } } },
-        take: 50,
-      });
-      return rows.map((e) => ({
+    async execute(_ctx, input) {
+      const status = typeof input.status === "string" && input.status ? input.status : undefined;
+      const rows = await listEngagementSummaries(status ? { status } : {});
+      return rows.slice(0, 50).map((e) => ({
         id: e.id,
         name: e.name,
-        client: e.client.name,
+        client: e.clientName,
         status: e.status,
         jobCount: e.jobs.length,
+        openJobs: e.openJobs,
+        contractCents: e.contractCents,
+        approvedChangeCents: e.approvedChangeCents,
+        costToDateCents: e.actualCents,
+        percentComplete: e.percentComplete,
+        nextMilestone: e.nextMilestone
+          ? { title: e.nextMilestone.title, job: e.nextMilestone.jobName, dueDate: e.nextMilestone.dueDate?.toISOString() ?? null }
+          : null,
+        lastActivityAt: e.lastActivityAt?.toISOString() ?? null,
+        attention: e.attention.slice(0, 10).map((a) => ({
+          severity: a.severity,
+          kind: a.kind,
+          job: a.jobName,
+          title: a.title,
+          detail: a.detail,
+        })),
+        attentionTotal: e.attention.length,
         link: `/jobs/projects/${e.id}`,
       }));
     },

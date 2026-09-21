@@ -62,6 +62,8 @@ Convention: `[ ]` = open, `[x]` = done (keep done items for ~1 week then prune).
 
 ## Done recently
 
+- 2026-09-21 — Project management: PM cockpit on `/jobs/projects/[id]` (rollups, attention list, upcoming milestones, jobs table), portfolio list w/ status filters + attention, milestone create/edit/delete on job view, richer `list_ui_projects` assistant tool (henley-hub)
+
 - 2026-05-22 — CRM search + stage filter + source filter + pagination (henley-hub)
 - 2026-05-22 — Codespaces Server Actions origin fix (henley-hub)
 - 2026-05-22 — BT data importer (`npm run db:reset:bt`) (henley-hub)
