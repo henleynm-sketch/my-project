@@ -12,7 +12,12 @@ import {
   isValidDivision,
 } from "@/lib/taxonomy";
 
-export default async function NewJobPage() {
+export default async function NewJobPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clientId?: string; engagementId?: string }>;
+}) {
+  const preset = await searchParams;
   const clients = await prisma.client.findMany({ orderBy: { name: "asc" } });
   const engagements = await prisma.engagement.findMany({
     orderBy: { updatedAt: "desc" },
@@ -54,7 +59,7 @@ export default async function NewJobPage() {
         salesRep: String(formData.get("salesRep") || "") || null,
       },
     });
-    redirect(`/projects/${p.id}`);
+    redirect(engagementId ? `/jobs/projects/${engagementId}` : `/projects/${p.id}`);
   }
 
   return (
@@ -65,7 +70,7 @@ export default async function NewJobPage() {
           {/* ── Client + name ─────────────────────────────────────────────── */}
           <div>
             <label className="label">Client</label>
-            <select name="clientId" className="input mt-1" required>
+            <select name="clientId" className="input mt-1" required defaultValue={preset.clientId ?? ""}>
               <option value="">Select...</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -78,7 +83,7 @@ export default async function NewJobPage() {
           </div>
           <div>
             <label className="label">Project (optional)</label>
-            <select name="engagementId" className="input mt-1">
+            <select name="engagementId" className="input mt-1" defaultValue={preset.engagementId ?? ""}>
               <option value="">— none yet —</option>
               {engagements.map((e) => (
                 <option key={e.id} value={e.id}>{e.name} · {e.client.name}</option>

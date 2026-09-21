@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
+import { isEngagementStatus } from "@/lib/engagementStatus";
 
 /**
  * Engagements — the UI-facing "Projects" that group Jobs (legacy Project
@@ -21,7 +22,6 @@ async function office() {
   return me;
 }
 
-const ENGAGEMENT_STATUSES = ["ACTIVE", "COMPLETE", "ON_HOLD"];
 
 export async function createEngagement(formData: FormData): Promise<EngagementActionResult> {
   const me = await office();
@@ -59,7 +59,7 @@ export async function updateEngagement(formData: FormData): Promise<EngagementAc
   if (name) data.name = name;
   const status = String(formData.get("status") || "");
   if (status) {
-    if (!ENGAGEMENT_STATUSES.includes(status)) return { ok: false, error: "Invalid status" };
+    if (!isEngagementStatus(status)) return { ok: false, error: "Invalid status" };
     data.status = status;
   }
   if (formData.has("description")) {

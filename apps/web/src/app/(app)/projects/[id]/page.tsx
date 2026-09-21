@@ -8,7 +8,6 @@ import WeatherCard from "@/components/jobs/WeatherCard";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { createDailyLog } from "@/lib/services/dailyLogService";
-import { updateMilestoneStatus } from "@/lib/services/milestoneService";
 import { listProjectChangeOrders } from "@/lib/services/changeOrderService";
 import ChangeOrders from "@/components/ChangeOrders";
 import {
@@ -23,6 +22,7 @@ import type { Role } from "@/lib/roles";
 import { formatDate, formatMoney, formatRelative } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import DailyLogForm from "@/components/DailyLogForm";
+import MilestoneList from "@/components/MilestoneList";
 import TimeClockTab from "@/components/TimeClockTab";
 import TimeReviewTab from "@/components/TimeReviewTab";
 import SendToTasksButton from "./SendToTasksButton";
@@ -140,6 +140,7 @@ export default async function ProjectDetail({
   }
 
   const showFinancials = canSeeFinancials(role);
+  const visibleMilestones = isClient ? project.milestones.filter((m) => m.clientVisible) : project.milestones;
   const totalEstCents = project.budgetItems.reduce((a, b) => a + b.estimateCents, 0);
   const totalActCents = project.budgetItems.reduce((a, b) => a + b.actualCents, 0);
   const overUnder = totalActCents - totalEstCents;
@@ -218,19 +219,6 @@ export default async function ProjectDetail({
     }
     revalidatePath(`/projects/${projectId}`);
   }
-
-  async function updateMilestone(formData: FormData) {
-    "use server";
-    const me = await auth();
-    if (!me?.user) return;
-    const r = me.user.role as Role;
-    if (r === "CLIENT" || r === "SUB") return;
-    const id = String(formData.get("id"));
-    const status = String(formData.get("status"));
-    await updateMilestoneStatus(id, status);
-    revalidatePath(`/projects/${projectId}`);
-  }
-
 
   // Templates matching this project's job type
   const matchingTemplates = project.jobType
@@ -364,41 +352,19 @@ export default async function ProjectDetail({
         {activeTab === "overview" ? (
           <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          <MilestoneList
+            projectId={project.id}
+            milestones={visibleMilestones.map((m) => ({
+              id: m.id,
+              title: m.title,
+              dueDate: m.dueDate?.toISOString() ?? null,
+              status: m.status,
+              clientVisible: m.clientVisible,
+            }))}
+            canSetStatus={role === "CEO" || role === "OFFICE" || role === "FIELD"}
+            canManage={role === "CEO" || role === "OFFICE"}
+          />
           <section className="hh-panel p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-3">
-              <h2 className="hh-label">Milestones</h2>
-              <span className="hh-secondary">
-                {project.milestones.filter((m) => m.status === "DONE").length} / {project.milestones.length} done
-              </span>
-            </div>
-            <ul className="space-y-2">
-              {project.milestones.map((m) => (
-                <li key={m.id} className="hh-row justify-between">
-                  <div>
-                    <div className="hh-primary">{m.title}</div>
-                    {m.dueDate && (
-                      <div className="hh-secondary mt-0.5">Due {formatDate(m.dueDate)}</div>
-                    )}
-                  </div>
-                  {role === "CLIENT" || role === "SUB" ? (
-                    <span className={msBadge(m.status)}>{m.status.replace("_", " ").toLowerCase()}</span>
-                  ) : (
-                    <form action={updateMilestone} className="flex items-center gap-2">
-                      <input type="hidden" name="id" value={m.id} />
-                      <select name="status" defaultValue={m.status} className="input py-1 text-xs">
-                        <option value="PENDING">Pending</option>
-                        <option value="IN_PROGRESS">In progress</option>
-                        <option value="DONE">Done</option>
-                        <option value="BLOCKED">Blocked</option>
-                      </select>
-                      <button className="btn-ghost text-xs font-semibold">Save</button>
-                    </form>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <section className="hh-panel p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between pb-3">
               <h2 className="hh-label">Daily logs</h2>
               <span className="hh-secondary">{project.dailyLogs.length} recent</span>
@@ -658,12 +624,6 @@ function Field({ k, v }: { k: string; v: string }) {
       <dd className="text-right hh-primary">{v}</dd>
     </div>
   );
-}
-function msBadge(s: string) {
-  if (s === "DONE") return "hh-badge hh-badge--success";
-  if (s === "IN_PROGRESS") return "hh-badge";
-  if (s === "BLOCKED") return "hh-badge hh-badge--danger";
-  return "hh-badge";
 }
 function selBadge(s: string) {
   if (s === "APPROVED") return "hh-badge hh-badge--success";
