@@ -1,0 +1,25 @@
+{
+  "slug": "B04-selections",
+  "hook": "We pick your windows before we pour your foundation",
+  "hook_seconds": 3.0,
+  "clips": [
+    {"file": "IMG_1001.MOV", "in": 2.0, "out": 48.5},
+    {"file": "IMG_1004.MOV", "fit": "blur"}
+  ],
+  "trim_silence": true,
+  "broll": [
+    {"file": "IMG_1010.MOV", "on_word": "windows", "dur": 2.5},
+    {"file": "IMG_1012.MOV", "at": 14.0, "dur": 3.0, "in": 1.0, "speed": 2.0}
+  ],
+  "text": [
+    {"text": "12 selection categories", "on_word": "12", "dur": 2.5}
+  ],
+  "music": "assets/music/track.mp3",
+  "music_volume": 0.15,
+  "cta": "Next: why permits take months. Follow so you don't miss it.",
+  "cover_at": 0.8,
+  "post": {
+    "caption": "We pick your windows before we pour your foundation.\n\nWindows, doors, cabinets and appliances can take 12+ weeks to arrive. Order late and the whole build waits.\n\nThat's why selections happen during design, not during construction.\n\nPlanning a build? DM us \"BUILD\".",
+    "hashtags": ["#customhomes", "#homebuilding", "#selections", "#kawarthalakes", "#durhamregion", "#designbuild"]
+  }
+}
