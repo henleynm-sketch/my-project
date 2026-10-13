@@ -1,0 +1,17 @@
+{
+  "handle": "@henleycontracting",
+  "default_cta": "Building or renovating in Durham, the Kawarthas or Muskoka? DM us \"BUILD\".",
+  "font_black": "assets/fonts/Inter-Black.otf",
+  "font_bold": "assets/fonts/Inter-Bold.otf",
+  "logo": "assets/logo.png",
+  "accent": "#F2B705",
+  "caption_color": "#FFFFFF",
+  "caption_size": 82,
+  "caption_margin_bottom": 560,
+  "hook_text": "#111111",
+  "hook_box": "#FFFFFF",
+  "hook_size": 74,
+  "hook_y": 300,
+  "end_card_bg": "#151515",
+  "hashtags": ["#customhomes", "#durhamregion", "#kawarthalakes", "#homebuilder", "#designbuild", "#henleycontracting"]
+}
